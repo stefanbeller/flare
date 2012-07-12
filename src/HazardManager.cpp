@@ -39,7 +39,7 @@ void HazardManager::logic() {
 
 	// remove all hazards with lifespan 0.  Most hazards still display their last frame.
 	for (int i=h.size()-1; i>=0; i--) {
-		if (h[i]->lifespan == 0)
+		if (h[i].lifespan == 0)
 			expire(i);
 	}
 
@@ -47,21 +47,21 @@ void HazardManager::logic() {
 
 	// handle single-frame transforms
 	for (int i=h.size()-1; i>=0; i--) {
-		h[i]->logic();
+		h[i].logic();
 
 		// remove all hazards that need to die immediately (e.g. exit the map)
-		if (h[i]->remove_now)
+		if (h[i].remove_now)
 			expire(i);
 
 
 		// if a moving hazard hits a wall, check for an after-effect
-		if (h[i]->hit_wall && h[i]->wall_power >= 0) {
+		if (h[i].hit_wall && h[i].wall_power >= 0) {
 			Point target;
-			target.x = (int)(h[i]->pos.x);
-			target.y = (int)(h[i]->pos.y);
+			target.x = (int)(h[i].pos.x);
+			target.y = (int)(h[i].pos.y);
 
-			powers->activate(h[i]->wall_power, h[i]->src_stats, target);
-			if (powers->powers[h[i]->wall_power].directional) powers->hazards.back()->direction = h[i]->direction;
+			powers->activate(h[i].wall_power, h[i].src_stats, target);
+			if (powers->powers[h[i].wall_power].directional) powers->hazards.back()->direction = h[i].direction;
 
 		}
 
@@ -71,22 +71,22 @@ void HazardManager::logic() {
 
 	// handle collisions
 	for (unsigned int i=0; i<h.size(); i++) {
-		if (h[i]->active && h[i]->delay_frames==0 && (h[i]->active_frame == -1 || h[i]->active_frame == h[i]->frame)) {
+		if (h[i].active && h[i].delay_frames==0 && (h[i].active_frame == -1 || h[i].active_frame == h[i].frame)) {
 
 			// process hazards that can hurt enemies
-			if (h[i]->source_type != SOURCE_TYPE_ENEMY) { //hero or neutral sources
+			if (h[i].source_type != SOURCE_TYPE_ENEMY) { //hero or neutral sources
 				for (unsigned int eindex = 0; eindex < enemies->enemies.size(); eindex++) {
 
 					// only check living enemies
-					if (enemies->enemies[eindex]->stats.hp > 0 && h[i]->active) {
-						if (isWithin(round(h[i]->pos), h[i]->radius, enemies->enemies[eindex]->stats.pos)) {
-							if (!h[i]->hasEntity(enemies->enemies[eindex])) {
-								h[i]->addEntity(enemies->enemies[eindex]);
+					if (enemies->enemies[eindex]->stats.hp > 0 && h[i].active) {
+						if (isWithin(round(h[i].pos), h[i].radius, enemies->enemies[eindex]->stats.pos)) {
+							if (!h[i].hasEntity(enemies->enemies[eindex])) {
+								h[i].addEntity(enemies->enemies[eindex]);
 								// hit!
-								hit = enemies->enemies[eindex]->takeHit(*h[i]);
-								if (!h[i]->multitarget && hit) {
-									h[i]->active = false;
-									if (!h[i]->complete_animation) h[i]->lifespan = 0;
+								hit = enemies->enemies[eindex]->takeHit(h[i]);
+								if (!h[i].multitarget && hit) {
+									h[i].active = false;
+									if (!h[i].complete_animation) h[i].lifespan = 0;
 								}
 							}
 						}
@@ -96,16 +96,16 @@ void HazardManager::logic() {
 			}
 
 			// process hazards that can hurt the hero
-			if (h[i]->source_type != SOURCE_TYPE_HERO) { //enemy or neutral sources
-				if (hero->stats.hp > 0 && h[i]->active) {
-					if (isWithin(round(h[i]->pos), h[i]->radius, hero->stats.pos)) {
-						if (!h[i]->hasEntity(hero)) {
-							h[i]->addEntity(hero);
+			if (h[i].source_type != SOURCE_TYPE_HERO) { //enemy or neutral sources
+				if (hero->stats.hp > 0 && h[i].active) {
+					if (isWithin(round(h[i].pos), h[i].radius, hero->stats.pos)) {
+						if (!h[i].hasEntity(hero)) {
+							h[i].addEntity(hero);
 							// hit!
-							hit = hero->takeHit(*h[i]);
-							if (!h[i]->multitarget && hit) {
-								h[i]->active = false;
-								if (!h[i]->complete_animation) h[i]->lifespan = 0;
+							hit = hero->takeHit(h[i]);
+							if (!h[i].multitarget && hit) {
+								h[i].active = false;
+								if (!h[i].complete_animation) h[i].lifespan = 0;
 							}
 						}
 					}
@@ -130,19 +130,19 @@ void HazardManager::checkNewHazards() {
 		powers->hazards.pop();
 		new_haz->setCollision(collider);
 
-		h.push_back(new_haz);
+		h.push_back(*new_haz);
 	}
 
 	// check hero hazards
 	if (hero->haz != NULL) {
-		h.push_back(hero->haz);
+		h.push_back(*hero->haz);
 		hero->haz = NULL;
 	}
 
 	// check monster hazards
 	for (unsigned int eindex = 0; eindex < enemies->enemies.size(); eindex++) {
 		if (enemies->enemies[eindex]->haz != NULL) {
-			h.push_back(enemies->enemies[eindex]->haz);
+			h.push_back(*enemies->enemies[eindex]->haz);
 			enemies->enemies[eindex]->haz = NULL;
 		}
 	}
@@ -167,22 +167,22 @@ void HazardManager::handleNewMap(MapCollision *_collider) {
  */
 void HazardManager::addRenders(vector<Renderable> &r) {
 	for (unsigned int i=0; i<h.size(); i++) {
-		if (h[i]->rendered && h[i]->delay_frames == 0) {
+		if (h[i].rendered && h[i].delay_frames == 0) {
 			Renderable re;
-			re.map_pos.x = round(h[i]->pos.x);
-			re.map_pos.y = round(h[i]->pos.y);
-			re.sprite = h[i]->sprites;
-			re.src.x = h[i]->frame_size.x * (h[i]->frame / h[i]->frame_duration);
-			re.src.w = h[i]->frame_size.x;
-			re.src.h = h[i]->frame_size.y;
-			re.offset.x = h[i]->frame_offset.x;
-			re.offset.y = h[i]->frame_offset.y;
-			re.object_layer = !h[i]->floor;
+			re.map_pos.x = round(h[i].pos.x);
+			re.map_pos.y = round(h[i].pos.y);
+			re.sprite = h[i].sprites;
+			re.src.x = h[i].frame_size.x * (h[i].frame / h[i].frame_duration);
+			re.src.w = h[i].frame_size.x;
+			re.src.h = h[i].frame_size.y;
+			re.offset.x = h[i].frame_offset.x;
+			re.offset.y = h[i].frame_offset.y;
+			re.object_layer = !h[i].floor;
 
-			if (h[i]->direction > 0)
-				re.src.y = h[i]->frame_size.y * h[i]->direction;
-			else if (h[i]->visual_option > 0)
-				re.src.y = h[i]->frame_size.y * h[i]->visual_option;
+			if (h[i].direction > 0)
+				re.src.y = h[i].frame_size.y * h[i].direction;
+			else if (h[i].visual_option > 0)
+				re.src.y = h[i].frame_size.y * h[i].visual_option;
 			else
 				re.src.y = 0;
 			r.push_back(re);

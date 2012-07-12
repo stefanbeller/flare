@@ -49,7 +49,7 @@ public:
 	void handleNewMap(MapCollision *_collider);
 	void addRenders(std::vector<Renderable> &r);
 
-	std::vector<Hazard*> h;
+	std::vector<Hazard> h;
 };
 
 #endif
