@@ -197,6 +197,12 @@ private:
 	std::string tileset;
 	std::string music_filename;
 
+	// How many tiles should be rendered outside of the rendering to make
+	// sure larger objects are still rendered even if outside the screen.
+	const unsigned short tiles_outside_of_screen;
+	const unsigned short max_tiles_width;
+	const unsigned short max_tiles_height;
+
 	// in case of animated tiles switched off, prerender background into this layer
 	SDL_Surface* backgroundsurface;
 

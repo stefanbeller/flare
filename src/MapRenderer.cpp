@@ -27,8 +27,17 @@ FLARE.  If not, see http://www.gnu.org/licenses/
 
 using namespace std;
 
-MapRenderer::MapRenderer(CampaignManager *_camp) {
-
+/**
+ * The MapRenderer class displays the game onto the screen.
+ * It assumes that the screensize does not change over time.
+ */
+MapRenderer::MapRenderer(CampaignManager *_camp)
+	// depending on view mode: In isometric mode it is actually only half
+	// the value.
+	: tiles_outside_of_screen(12)
+	, max_tiles_width((VIEW_W / TILE_W) + 2 * tiles_outside_of_screen)
+	, max_tiles_height((2 * VIEW_H / TILE_H) + 2 * tiles_outside_of_screen)
+	{
 	camp = _camp;
 
 	tip = new WidgetTooltip();
@@ -703,11 +712,8 @@ void MapRenderer::renderIsoBackground(SDL_Surface *wheretorender, Point offset) 
 	SDL_Rect dest;
 
 	const Point upperright = screen_to_map(0, 0, shakycam.x, shakycam.y);
-	const short tiles_outside_ofscreen = 12;
-	const short max_tiles_width = (VIEW_W / TILE_W) + 2 * tiles_outside_ofscreen;
-	const short max_tiles_height = (2 * VIEW_H / TILE_H) + 2 * tiles_outside_ofscreen;
 	j = upperright.y / UNITS_PER_TILE;
-	i = upperright.x / UNITS_PER_TILE - tiles_outside_ofscreen;
+	i = upperright.x / UNITS_PER_TILE - tiles_outside_of_screen;
 
 	for (unsigned short y = max_tiles_height ; y; --y) {
 		short tiles_width = 0;
@@ -769,16 +775,13 @@ void MapRenderer::renderIsoFrontObjects(vector<Renderable> &r) {
 	short int j;
 	SDL_Rect dest;
 	const Point upperright = screen_to_map(0, 0, shakycam.x, shakycam.y);
-	const short tiles_outside_ofscreen = 12;
-	const short max_tiles_width = (VIEW_W / TILE_W) + 2 * tiles_outside_ofscreen;
-	const short max_tiles_height = (2 * VIEW_H / TILE_H) + 2 * tiles_outside_ofscreen;
 
 	vector<Renderable>::iterator r_cursor = r.begin();
 	vector<Renderable>::iterator r_end = r.end();
 
 	// object layer
 	j = upperright.y / UNITS_PER_TILE;
-	i = upperright.x / UNITS_PER_TILE - tiles_outside_ofscreen;
+	i = upperright.x / UNITS_PER_TILE - tiles_outside_of_screen;
 
 	while (r_cursor != r_end && (r_cursor->tile.x + r_cursor->tile.y < i + j || r_cursor->tile.x < i))
 		r_cursor++;
