@@ -706,6 +706,36 @@ void MapRenderer::createBackgroundSurface() {
 	SDL_FreeSurface(surface);
 }
 
+void MapRenderer::createFrontObjectSlices() {
+	// We want to prerender the foreground objects as well. To prerender these
+	// we need to slice the foreground into prerendered slices so the renderables
+	// can still be inserted before/after the right objects tile slice,
+	// so the objects(such as a tree) in front still shadow the renderables(e.g. hero)
+	// Such a slice is basically a SDL_Surface, which will get the objects of
+	// one row prerendered on it.
+	// Now we determine the size of the slices
+	// (width is clear, that will be a little more than screen width)
+	// The height is actually not only determined by the maximum size of one
+	// single tile, but different tiles could have different offsets in respect to each other.
+	// We'll calculate the ground point and assume the ground points of the tiles  in one slice
+	// are on one constant height, so we are interested in upper and lower range from that
+	// imaginary line.
+	int upper_dy = 0;
+	int lower_dy = 0;
+	for (unsigned i = 0; i < tset.tiles.size(); i++) {
+		lower_dy = max(lower_dy, tset.tiles[i].src.h - tset.tiles[i].offset.y);
+		upper_dy = max(upper_dy, tset.tiles[i].offset.y);
+	}
+	objectsurfaces_height = upper_dy;
+
+	// We need as many slices as the screen can cover plus a few extra slices
+	// to compensate movement.
+	objectsurfaces = new vector<SDL_Surface*>();
+	for (unsigned i = 0; i < max_tiles_height; i++) {
+		objectsurfaces->push_back(createSurface(0,0));
+	}
+}
+
 void MapRenderer::renderIsoBackground(SDL_Surface *wheretorender, Point offset) {
 	short int i;
 	short int j;
@@ -756,21 +786,21 @@ void MapRenderer::renderIsoBackground(SDL_Surface *wheretorender, Point offset) 
 	}
 }
 
-void MapRenderer::renderIsoBackObjects(vector<Renderable> &r) {
+void MapRenderer::renderIsoBackObjects(SDL_Surface *wheretorender, Point offset, vector<Renderable> &r) {
 	SDL_Rect dest;
 	// some renderables are drawn above the background and below the objects
 	vector<Renderable>::iterator it;
 	for (it = r.begin(); it != r.end(); it++) {
 		if (!it->object_layer) {
 			Point p = map_to_screen(it->map_pos.x, it->map_pos.y, shakycam.x, shakycam.y);
-			dest.x = p.x - it->offset.x;
-			dest.y = p.y - it->offset.y;
-			SDL_BlitSurface(it->sprite, &(it->src), screen, &dest);
+			dest.x = p.x - it->offset.x + offset.x;
+			dest.y = p.y - it->offset.y + offset.y;
+			SDL_BlitSurface(it->sprite, &(it->src), wheretorender, &dest);
 		}
 	}
 }
 
-void MapRenderer::renderIsoFrontObjects(vector<Renderable> &r) {
+void MapRenderer::renderIsoFrontObjects(SDL_Surface *wheretorender, Point offset, vector<Renderable> &r) {
 	short int i;
 	short int j;
 	SDL_Rect dest;
@@ -840,13 +870,15 @@ void MapRenderer::renderIsoFrontObjects(vector<Renderable> &r) {
 }
 
 void MapRenderer::renderIso(vector<Renderable> &r) {
+	const Point nulloffset = {0, 0};
 	if (ANIMATED_TILES) {
-		Point off = {0, 0};
-		renderIsoBackground(screen, off);
+		renderIsoBackground(screen, nulloffset);
+		renderIsoBackObjects(screen, nulloffset, r);
+		renderIsoFrontObjects(screen, nulloffset, r);
 	}
 	else {
-		if (abs(shakycam.x - backgroundsurfaceoffset.x) > 2 * UNITS_PER_TILE
-			|| abs(shakycam.y - backgroundsurfaceoffset.y) > 2 * UNITS_PER_TILE
+		if (abs(shakycam.x - backgroundsurfaceoffset.x) > 4 * UNITS_PER_TILE
+			|| abs(shakycam.y - backgroundsurfaceoffset.y) > 4 * UNITS_PER_TILE
 			|| repaint_background) {
 
 			if (!backgroundsurface)
@@ -859,6 +891,8 @@ void MapRenderer::renderIso(vector<Renderable> &r) {
 			SDL_FillRect(backgroundsurface, 0, 0);
 			Point off = {VIEW_W_HALF, VIEW_H_HALF};
 			renderIsoBackground(backgroundsurface, off);
+			renderIsoBackObjects(backgroundsurface, off, r);
+			//renderIsoFrontObjects(backgroundsurface, off, r);
 		}
 		Point p = map_to_screen(shakycam.x, shakycam.y , backgroundsurfaceoffset.x, backgroundsurfaceoffset.y);
 		SDL_Rect src;
@@ -867,10 +901,9 @@ void MapRenderer::renderIso(vector<Renderable> &r) {
 		src.w = 2 * VIEW_W;
 		src.h = 2 * VIEW_H;
 		SDL_BlitSurface(backgroundsurface, &src, screen , 0);
+		renderIsoFrontObjects(screen, nulloffset, r);
 	}
 
-	renderIsoBackObjects(r);
-	renderIsoFrontObjects(r);
 	checkTooltip();
 }
 

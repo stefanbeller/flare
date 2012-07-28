@@ -181,9 +181,9 @@ private:
 	void executeOnLoadEvents();
 	
 	// offset in screen/surface coordinates.
-	void renderIsoBackground(SDL_Surface *wheretorender, Point camwithoffset);
-	void renderIsoBackObjects(std::vector<Renderable> &r);
-	void renderIsoFrontObjects(std::vector<Renderable> &r);
+	void renderIsoBackground(SDL_Surface *wheretorender, Point offset);
+	void renderIsoBackObjects(SDL_Surface *wheretorender, Point offset, std::vector<Renderable> &r);
+	void renderIsoFrontObjects(SDL_Surface *wheretorender, Point offset, std::vector<Renderable> &r);
 	void renderIso(std::vector<Renderable> &r);
 
 	void renderOrthoBackground();
@@ -205,9 +205,12 @@ private:
 
 	// in case of animated tiles switched off, prerender background into this layer
 	SDL_Surface* backgroundsurface;
+	std::vector<SDL_Surface*> *objectsurfaces;
+	int objectsurfaces_height;
 
 	// only called if the background surface is actually used, i.e. ANIMATED_TILES = false;
 	void createBackgroundSurface();
+	void createFrontObjectSlices();
 
 	// point where the backgroundsurface was rendered. same coordinates as shakycam
 	Point backgroundsurfaceoffset;
