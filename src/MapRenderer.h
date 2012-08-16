@@ -179,17 +179,17 @@ private:
 
 	// some events are automatically triggered when the map is loaded
 	void executeOnLoadEvents();
-	
+
 	// offset in screen/surface coordinates.
 	void renderIsoBackground(SDL_Surface *wheretorender, Point offset);
 	void renderIsoBackObjects(SDL_Surface *wheretorender, Point offset, std::vector<Renderable> &r);
 	void renderIsoFrontObjects(SDL_Surface *wheretorender, Point offset, std::vector<Renderable> &r);
-	void renderIso(std::vector<Renderable> &r);
+	void renderIso(std::vector<Renderable> &r, std::vector<Renderable> &r_dead);
 
 	void renderOrthoBackground();
 	void renderOrthoBackObjects(std::vector<Renderable> &r);
 	void renderOrthoFrontObjects(std::vector<Renderable> &r);
-	void renderOrtho(std::vector<Renderable> &r);
+	void renderOrtho(std::vector<Renderable> &r, std::vector<Renderable> &r_dead);
 
 	Point shakycam;
 	bool new_music;
@@ -216,7 +216,7 @@ private:
 	Point backgroundsurfaceoffset;
 
 	// force a rendering of the background in the next render step.
-	bool repaint_background;
+	int numberBackObjects;
 
 public:
 	CampaignManager *camp;
@@ -228,7 +228,7 @@ public:
 
 	int load(std::string filename);
 	void logic();
-	void render(std::vector<Renderable> &r);
+	void render(std::vector<Renderable> &r, std::vector<Renderable> &r_dead);
 
 	void clearEvents();
 	void checkEvents(Point loc);

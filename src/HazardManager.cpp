@@ -167,7 +167,7 @@ void HazardManager::handleNewMap(MapCollision *_collider) {
  * Map objects need to be drawn in Z order, so we allow a parent object (GameEngine)
  * to collect all mobile sprites each frame.
  */
-void HazardManager::addRenders(vector<Renderable> &r) {
+void HazardManager::addRenders(vector<Renderable> &r, vector<Renderable> &r_dead) {
 	for (unsigned int i=0; i<h.size(); i++) {
 		if (h[i]->rendered && h[i]->delay_frames == 0) {
 			Renderable re;
@@ -187,7 +187,7 @@ void HazardManager::addRenders(vector<Renderable> &r) {
 				re.src.y = h[i]->frame_size.y * h[i]->visual_option;
 			else
 				re.src.y = 0;
-			r.push_back(re);
+			(re.object_layer ? r : r_dead).push_back(re);
 		}
 	}
 }

@@ -67,7 +67,7 @@ MapRenderer::MapRenderer(CampaignManager *_camp)
 	backgroundsurface = 0;
 	backgroundsurfaceoffset.x = 0;
 	backgroundsurfaceoffset.y = 0;
-	repaint_background = false;
+	numberBackObjects = 0;
 	stash = false;
 }
 
@@ -650,10 +650,15 @@ bool zcompare_ortho(const Renderable &r1, const Renderable &r2) {
 	return true;
 }
 
-void MapRenderer::render(vector<Renderable> &r) {
+void MapRenderer::render(vector<Renderable> &r, vector<Renderable> &r_dead) {
 
 	vector<Renderable>::iterator it;
 	for (it = r.begin(); it != r.end(); it++) {
+		// calculate tile
+		it->tile.x = it->map_pos.x >> TILE_SHIFT;
+		it->tile.y = it->map_pos.y >> TILE_SHIFT;
+	}
+	for (it = r_dead.begin(); it != r_dead.end(); it++) {
 		// calculate tile
 		it->tile.x = it->map_pos.x >> TILE_SHIFT;
 		it->tile.y = it->map_pos.y >> TILE_SHIFT;
@@ -670,10 +675,12 @@ void MapRenderer::render(vector<Renderable> &r) {
 
 	if (TILESET_ORIENTATION == TILESET_ORTHOGONAL) {
 		std::sort(r.begin(), r.end(), zcompare_ortho);
-		renderOrtho(r);
+		std::sort(r_dead.begin(), r_dead.end(), zcompare_ortho);
+		renderOrtho(r, r_dead);
 	} else {
 		std::sort(r.begin(), r.end(), zcompare_iso);
-		renderIso(r);
+		std::sort(r_dead.begin(), r_dead.end(), zcompare_iso);
+		renderIso(r, r_dead);
 	}
 }
 
@@ -869,30 +876,29 @@ void MapRenderer::renderIsoFrontObjects(SDL_Surface *wheretorender, Point offset
 	}
 }
 
-void MapRenderer::renderIso(vector<Renderable> &r) {
+void MapRenderer::renderIso(vector<Renderable> &r, vector<Renderable> &r_dead) {
 	const Point nulloffset = {0, 0};
 	if (ANIMATED_TILES) {
 		renderIsoBackground(screen, nulloffset);
-		renderIsoBackObjects(screen, nulloffset, r);
+		renderIsoBackObjects(screen, nulloffset, r_dead);
 		renderIsoFrontObjects(screen, nulloffset, r);
 	}
 	else {
 		if (abs(shakycam.x - backgroundsurfaceoffset.x) > 4 * UNITS_PER_TILE
 			|| abs(shakycam.y - backgroundsurfaceoffset.y) > 4 * UNITS_PER_TILE
-			|| repaint_background) {
+			|| numberBackObjects != r_dead.size()) {
 
 			if (!backgroundsurface)
 				createBackgroundSurface();
 
-			repaint_background = false;
+			numberBackObjects = r_dead.size();
 
 			backgroundsurfaceoffset = shakycam;
 
 			SDL_FillRect(backgroundsurface, 0, 0);
 			Point off = {VIEW_W_HALF, VIEW_H_HALF};
 			renderIsoBackground(backgroundsurface, off);
-			renderIsoBackObjects(backgroundsurface, off, r);
-			//renderIsoFrontObjects(backgroundsurface, off, r);
+			renderIsoBackObjects(backgroundsurface, off, r_dead);
 		}
 		Point p = map_to_screen(shakycam.x, shakycam.y , backgroundsurfaceoffset.x, backgroundsurfaceoffset.y);
 		SDL_Rect src;
@@ -983,10 +989,10 @@ void MapRenderer::renderOrthoFrontObjects(std::vector<Renderable> &r) {
 	}
 }
 
-void MapRenderer::renderOrtho(vector<Renderable> &r) {
+void MapRenderer::renderOrtho(vector<Renderable> &r, vector<Renderable> &r_dead) {
 
 	renderOrthoBackground();
-	renderOrthoBackObjects(r);
+	renderOrthoBackObjects(r_dead);
 	renderOrthoFrontObjects(r);
 	//render event tooltips
 	checkTooltip();
@@ -1230,7 +1236,12 @@ bool MapRenderer::executeEvent(Map_Event &ev) {
 			}
 			else if (ec->s == "background") {
 				background[ec->x][ec->y] = ec->z;
-				repaint_background = true;
+				// make sure to repaint the background.
+				// when the option animated_tiles is disabled, the background
+				// is only rendered if the number of objects laying on the
+				// background layer changes, so set it to another value
+				// to force rerendering.
+				numberBackObjects = -1;
 			}
 			map_change = true;
 		}

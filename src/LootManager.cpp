@@ -550,7 +550,7 @@ ItemStack LootManager::checkAutoPickup(Point cam, Point hero_pos, int &gold, Men
 	return loot_stack;
 }
 
-void LootManager::addRenders(vector<Renderable> &renderables) {
+void LootManager::addRenders(vector<Renderable> &ren, vector<Renderable> &ren_dead) {
 	vector<LootDef>::iterator it;
 	for (it = loot.begin(); it != loot.end(); it++) {
 		Renderable r;
@@ -563,7 +563,7 @@ void LootManager::addRenders(vector<Renderable> &renderables) {
 		r.src.h = animation_pos.h;
 		r.offset.x = animation_offset.x;
 		r.offset.y = animation_offset.y;
-		r.object_layer = true;
+		r.object_layer = (it->frame == frame_count);
 
 		if (it->stack.item > 0) {
 			// item
@@ -581,7 +581,7 @@ void LootManager::addRenders(vector<Renderable> &renderables) {
 			else
 				r.sprite = flying_gold[2];
 		}
-		renderables.push_back(r);
+		(r.object_layer ? ren : ren_dead).push_back(r);
 	}
 }
 
