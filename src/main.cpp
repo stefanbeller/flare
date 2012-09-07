@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License along with
 FLARE.  If not, see http://www.gnu.org/licenses/
 */
 
+#include <assert.h>
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -131,33 +132,46 @@ static void init() {
 static void mainLoop (const vector<string>	& args) {
 
 	bool done = false;
-	int max_fps = MAX_FRAMES_PER_SEC;
-	int delay = 1000/max_fps;
-	int prevTicks = SDL_GetTicks();
-	int nowTicks;
+
+	int nowTicks = SDL_GetTicks();
+	int nextTicks = nowTicks;
+	int beforeTicks;
+	int fps;
 	bool debug_event = binary_search(args.begin(), args.end(), string("--debug_event"));
 
-	while ( !done ) {
+	bool limit_to_max_fps = true; // TODO: make this setting configurable.
+	int max_skipped_frames = 4;   // TODO: make this setting configurable.
+	int skipped_frames;
 
+	while ( !done ) {
+		beforeTicks = SDL_GetTicks();
 		SDL_PumpEvents();
 		inpt->handle(debug_event);
-		gswitch->logic();
-		
+
 		// black out
-		SDL_FillRect(screen, NULL, 0);		
-		
+		SDL_FillRect(screen, NULL, 0);
 		gswitch->render();
+		gswitch->showFPS(fps);
+		SDL_Flip(screen);
 
 		// Engine done means the user escapes the main game menu.
 		// Input done means the user closes the window.
 		done = gswitch->done || inpt->done;
 
 		nowTicks = SDL_GetTicks();
-		if (nowTicks - prevTicks < delay) SDL_Delay(delay - (nowTicks - prevTicks));
-		gswitch->showFPS(1000 / (SDL_GetTicks() - prevTicks));
-		prevTicks = SDL_GetTicks();
-
-		SDL_Flip(screen);
+		skipped_frames = max_skipped_frames;
+		while (nowTicks >= nextTicks && skipped_frames) {
+			skipped_frames--;
+			gswitch->logic();
+			nextTicks = nextTicks + 1000/MAX_FRAMES_PER_SEC;
+			nowTicks = SDL_GetTicks();
+		}
+		if (limit_to_max_fps) {
+			int delay = nextTicks - nowTicks;
+			if (delay > 0)
+				SDL_Delay(delay);
+		}
+		fps = 1000 / (SDL_GetTicks() - beforeTicks);
 	}
 }
 
