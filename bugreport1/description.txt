@@ -1,0 +1,7 @@
+Both screenshots taken with
+git describe
+v0.16-950-g93368c3
+
+The system 1 appears to be normal, in system2 the enemy name is missing.
+system 2 is run on a differetn computer, settings should be the same.
+
