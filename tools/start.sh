@@ -10,7 +10,8 @@
 ./spritesheetpacker.py --definition ../mods/minicore/animations/skeleton_mage.txt --images ../mods/minicore/images/enemies/skeleton_mage.png
 
 # beware, need manual run/hop selection of goblin and goblin_runner.txt!
-./spritesheetpacker.py --definition ../mods/minicore/animations/goblin.txt --images ../mods/minicore/images/enemies/goblin.png ../mods/minicore/images/enemies/goblin_elite.png
+./spritesheetpacker.py --definition ../mods/minicore/animations/goblin.txt --images ../mods/minicore/images/enemies/goblin.png
+./spritesheetpacker.py --definition ../mods/minicore/animations/goblin_elite.txt --images ../mods/minicore/images/enemies/goblin_elite.png
 
 
 # fantasycore:
@@ -25,7 +26,8 @@
 ./spritesheetpacker.py --definition ../mods/fantasycore/animations/skeleton_mage.txt --images ../mods/fantasycore/images/enemies/skeleton_mage.png
 
 # beware, need manual run/hop selection of goblin and goblin_runner.txt!
-./spritesheetpacker.py --definition ../mods/fantasycore/animations/goblin.txt --images ../mods/fantasycore/images/enemies/goblin.png ../mods/fantasycore/images/enemies/goblin_elite.png
+./spritesheetpacker.py --definition ../mods/fantasycore/animations/goblin.txt --images ../mods/fantasycore/images/enemies/goblin.png
+./spritesheetpacker.py --definition ../mods/fantasycore/animations/goblin_elite.txt --images ../mods/fantasycore/images/enemies/goblin_elite.png
 
 #../mods/fantasycore/animations/hero.txt
 
